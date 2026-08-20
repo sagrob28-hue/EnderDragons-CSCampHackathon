@@ -7,6 +7,10 @@ from subprocess import run
 # Implement the new user interface
 # Make real time input
 # Add colors
+# Add ASCII Art
+# Add help command
+# Add loading screen
+# Add KeyboardInterrupt banner
 # Experiment with other set-matching algorithms
 
 class IOUtils:
