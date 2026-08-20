@@ -4,7 +4,9 @@ from typing import ClassVar
 @dataclass(frozen=True)
 class Symptom:
 
-    POSSIBLE_SYMPTOMS: ClassVar[list[str]] = [
+    POSSIBLE_SYMPTOMS: ClassVar[dict[str, list[str]]] = {
+
+    "General": [
         "fever",
         "chills",
         "fatigue",
@@ -13,15 +15,36 @@ class Symptom:
         "weight loss",
         "weight gain",
         "loss of appetite",
+        "excessive thirst",
+        "excessive hunger",
+        "heat intolerance",
+        "cold intolerance",
+        "swollen lymph nodes",
+    ],
+    "Head and Nervous System": [
         "headache",
         "dizziness",
         "fainting",
         "confusion",
         "memory loss",
+        "seizure",
+        "tremor",
+        "slurred speech",
+        "facial droop",
+        "one sided weakness",
+        "numbness",
+        "tingling",
+        "sensitivity to light",
+        "neck stiffness",
+    ],
+    "Eyes": [
         "blurred vision",
         "double vision",
         "eye pain",
         "red eye",
+        "sensitivity to light",
+    ],
+    "Ears, Nose and Throat": [
         "hearing loss",
         "ear pain",
         "ringing in ears",
@@ -30,6 +53,11 @@ class Symptom:
         "sneezing",
         "sore throat",
         "hoarseness",
+        "loss of smell",
+        "loss of taste",
+        "difficulty swallowing",
+    ],
+    "Chest and Breathing": [
         "cough",
         "productive cough",
         "coughing blood",
@@ -37,6 +65,8 @@ class Symptom:
         "wheezing",
         "chest pain",
         "chest tightness",
+    ],
+    "Heart and Circulation": [
         "palpitations",
         "rapid heartbeat",
         "irregular heartbeat",
@@ -45,6 +75,11 @@ class Symptom:
         "swollen ankles",
         "leg swelling",
         "calf pain",
+        "pale skin",
+        "fainting",
+        "dizziness",
+    ],
+    "Stomach and Digestion": [
         "nausea",
         "vomiting",
         "vomiting blood",
@@ -54,15 +89,18 @@ class Symptom:
         "bloating",
         "heartburn",
         "difficulty swallowing",
-        "jaundice",
-        "dark urine",
-        "pale stool",
         "blood in stool",
+        "pale stool",
+        "jaundice",
+        "loss of appetite",
+    ],
+    "Urinary": [
         "frequent urination",
         "painful urination",
         "blood in urine",
-        "excessive thirst",
-        "excessive hunger",
+        "dark urine",
+    ],
+    "Muscles, Bones and Joints": [
         "joint pain",
         "joint swelling",
         "morning stiffness",
@@ -70,6 +108,8 @@ class Symptom:
         "muscle weakness",
         "back pain",
         "neck stiffness",
+    ],
+    "Skin, Hair and Nails": [
         "rash",
         "itching",
         "hives",
@@ -77,33 +117,29 @@ class Symptom:
         "bruising easily",
         "hair loss",
         "pale skin",
-        "numbness",
-        "tingling",
-        "tremor",
-        "seizure",
-        "slurred speech",
-        "facial droop",
-        "one sided weakness",
-        "sensitivity to light",
-        "loss of smell",
-        "loss of taste",
+        "jaundice",
+    ],
+    "Sleep and Mood": [
         "insomnia",
         "excessive sleepiness",
         "anxiety",
         "depressed mood",
         "irritability",
-        "heat intolerance",
-        "cold intolerance",
-        "swollen lymph nodes",
-    ]
+        "fatigue",
+    ],
+}
 
     name: str
+
+    @staticmethod
+    def is_valid_symptom(name: str) -> bool:
+        return any(name in symptoms for symptoms in Symptom.POSSIBLE_SYMPTOMS.values())
 
     def __post_init__(self):
 
         object.__setattr__(self, "name", self.name.strip().casefold())
 
-        if self.name not in Symptom.POSSIBLE_SYMPTOMS:
+        if not Symptom.is_valid_symptom(self.name):
             raise ValueError(f"Invalid symptom name: {self.name}")
 
     def __repr__(self):
