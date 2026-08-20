@@ -1,5 +1,26 @@
 from data import SYMPTOMS, CONDITIONS
 from difflib import get_close_matches
+from functools import partial
+
+def jaccard_similarity(symptoms1, symptoms2):
+
+    return len(symptoms1 & symptoms2) / len(symptoms1 | symptoms2)
+
+def print_symptoms(symptoms):
+
+    if not symptoms:
+        return
+
+    n = len(symptoms)
+
+    max_len = max(map(len, symptoms))
+
+    print("~" * (max_len + 6))
+
+    for symptom in symptoms:
+        print(f"| - {symptom.upper():<{max_len}} |")
+
+    print("~" * (max_len + 6))
 
 if __name__ == "__main__":
 
@@ -7,20 +28,22 @@ if __name__ == "__main__":
 
     while True:
 
-        print(symptoms)
+        print_symptoms(symptoms)
 
-        new_symptom = input("Input Symptoms -> ").lower().strip()
+        symptom = input("Input Symptoms -> ").lower().strip()
 
-        if new_symptom in {"quit", "exit", "end"}:
+        if symptom in {"quit", "exit"}:
             break
 
-        if new_symptom in SYMPTOMS:
-            symptoms.add(new_symptom)
+        if symptom in SYMPTOMS:
+            symptoms.add(symptom)
 
         else:
-            symptom_corrected = get_close_matches(new_symptom, SYMPTOMS)
-            if not symptom_corrected:
+            symptom = get_close_matches(symptom, SYMPTOMS)
+            if not symptom:
                 continue
             else:
-                symptoms.add(symptom_corrected[0])
+                symptoms.add(symptom[0])
 
+    condition = CONDITIONS[max(CONDITIONS, key=partial(jaccard_similarity, symptoms))]
+    print(f"[Diagnosis] You have: {condition.upper()}!")
