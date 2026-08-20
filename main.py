@@ -2,18 +2,135 @@ from diagnosis import Diagnoser, Symptom
 from sys import stdout
 from platform import system
 from subprocess import run
+from enum import StrEnum
 
 # TO DO:
 # Make real time input
-# Add colors
 # Add ASCII Art
 # Add loading screen
 # Add KeyboardInterrupt banner
+
 # Add README.md, fix .gitignore issues
+
 # Make diagnosis screen more interesting
 # Add information of diagnosis / cures / description with diagnosis
 # Add links to NHS.uk with each disease.
+
 # Experiment with other set-matching algorithms
+
+_LEVELS = (0, 95, 135, 175, 215, 255)
+
+class Ansi(StrEnum):
+    """ANSI escape sequences. Members are real strings."""
+
+    RESET = "\033[0m"
+
+    # --- styles ---
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    ITALIC = "\033[3m"
+    UNDERLINE = "\033[4m"
+    BLINK = "\033[5m"
+    REVERSE = "\033[7m"
+    HIDDEN = "\033[8m"
+    STRIKE = "\033[9m"
+
+    # --- styles off ---
+    NO_BOLD = "\033[22m"
+    NO_ITALIC = "\033[23m"
+    NO_UNDERLINE = "\033[24m"
+    NO_BLINK = "\033[25m"
+    NO_REVERSE = "\033[27m"
+    NO_STRIKE = "\033[29m"
+
+    # --- foreground ---
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    DEFAULT = "\033[39m"
+
+    # --- bright foreground ---
+    BRIGHT_BLACK = "\033[90m"
+    BRIGHT_RED = "\033[91m"
+    BRIGHT_GREEN = "\033[92m"
+    BRIGHT_YELLOW = "\033[93m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_MAGENTA = "\033[95m"
+    BRIGHT_CYAN = "\033[96m"
+    BRIGHT_WHITE = "\033[97m"
+
+    # --- background ---
+    BG_BLACK = "\033[40m"
+    BG_RED = "\033[41m"
+    BG_GREEN = "\033[42m"
+    BG_YELLOW = "\033[43m"
+    BG_BLUE = "\033[44m"
+    BG_MAGENTA = "\033[45m"
+    BG_CYAN = "\033[46m"
+    BG_WHITE = "\033[47m"
+    BG_DEFAULT = "\033[49m"
+
+    # --- bright background ---
+    BG_BRIGHT_BLACK = "\033[100m"
+    BG_BRIGHT_RED = "\033[101m"
+    BG_BRIGHT_GREEN = "\033[102m"
+    BG_BRIGHT_YELLOW = "\033[103m"
+    BG_BRIGHT_BLUE = "\033[104m"
+    BG_BRIGHT_MAGENTA = "\033[105m"
+    BG_BRIGHT_CYAN = "\033[106m"
+    BG_BRIGHT_WHITE = "\033[107m"
+
+    CURSOR_RESET = "\033]112\033\\"
+    BEGIN_SYNC = "\033[?2026h"
+    END_SYNC = "\033[?2026l"
+
+    @staticmethod
+    def to_hex(n: int) -> str:
+        """256-palette index -> #rrggbb, for OSC sequences."""
+        if 16 <= n <= 231:
+            n -= 16
+            r, g, b = _LEVELS[n // 36], _LEVELS[(n // 6) % 6], _LEVELS[n % 6]
+        elif 232 <= n <= 255:
+            r = g = b = 8 + 10 * (n - 232)
+        else:
+            raise ValueError("use 16-255; 0-15 are terminal-theme defined")
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    @staticmethod
+    def fg(n: int) -> str:
+        return f"\033[38;5;{n}m"
+
+    @staticmethod
+    def bg(n: int) -> str:
+        return f"\033[48;5;{n}m"
+
+    @staticmethod
+    def cursor(n: int) -> str:
+        """OSC 12 - caret colour. Separate channel from SGR text colour."""
+        return f"\033]12;{Ansi.to_hex(n)}\033\\"
+
+    # --- imperative (write + flush immediately) ---
+
+    @staticmethod
+    def set_color(n: int) -> None:
+        """Set text and caret color for everything that follows."""
+
+        stdout.write(Ansi.fg(n) + Ansi.cursor(n))
+        stdout.flush()
+
+    @staticmethod
+    def clear_color() -> None:
+        stdout.write(Ansi.RESET + Ansi.CURSOR_RESET)
+        stdout.flush()
+
+    @staticmethod
+    def key(keyboard_key: str):
+        return f"{Ansi.ITALIC}[{keyboard_key}]{Ansi.NO_ITALIC}"
 
 class IOUtils:
 
@@ -65,6 +182,20 @@ class IOUtils:
 
 class SymptomModifier:
 
+    CATEGORY_COLORS = {
+        "General":                    64,  # olive
+        "Head and Nervous System":    91,  # dark violet
+        "Eyes":                       37,  # dark cyan
+        "Ears, Nose and Throat":      30,  # dark teal
+        "Chest and Breathing":        26,  # dark blue
+        "Heart and Circulation":     124,  # dark red
+        "Stomach and Digestion":     166,  # burnt orange
+        "Urinary":                   136,  # mustard
+        "Muscles, Bones and Joints":  28,  # forest green
+        "Skin, Hair and Nails":      132,  # dusty rose
+        "Sleep and Mood":             61,  # slate indigo
+    }
+
     def __init__(self, category: str, symptoms: set[Symptom]):
 
         if category not in Symptom.POSSIBLE_SYMPTOMS:
@@ -99,14 +230,16 @@ class SymptomModifier:
 
             available_symptoms[i] = f"{symptom:<{max_len}} {box}"
 
-        IOUtils.write(f"[{self.category.upper()}]\n")
+        Ansi.set_color(self.CATEGORY_COLORS[self.category])
+        IOUtils.write(f"{Ansi.ITALIC}[{self.category.upper()}]{Ansi.NO_ITALIC}\n")
         IOUtils.write("~" * (max_len + 8) + "\n")
 
-        for symptom in available_symptoms:
-            IOUtils.write(f"| {symptom.title():<{max_len}} |\n")
+        for i, symptom in enumerate(available_symptoms):
+            x = Ansi.REVERSE if i == self.index else ""
+            IOUtils.write(f"| {x}{symptom.title():<{max_len}}{Ansi.NO_REVERSE} |\n")
 
         IOUtils.write("~" * (max_len + 8) + "\n")
-        IOUtils.write("Press [a]/[d] to navigate, [ENTER] to select, [x] to exit.\n")
+        IOUtils.write(f"{Ansi.UNDERLINE}Press {Ansi.key('a')}/{Ansi.key('d')} to navigate, {Ansi.key('ENTER')} to select, {Ansi.key('x')} to exit.\n{Ansi.NO_UNDERLINE}")
 
     def modify(self):
 
@@ -144,9 +277,11 @@ class SymptomViewer:
 
         IOUtils.clear()
 
+        Ansi.set_color(35) # spring green
+
         max_len = max(map(lambda s: len(s.name), self.symptoms))
 
-        IOUtils.write(f"You have {n} symptom{'' if n == 1 else 's'} selected:\n")
+        IOUtils.write(f"{Ansi.ITALIC}You have {Ansi.BOLD}{n}{Ansi.NO_BOLD} symptom{'' if n == 1 else 's'} selected:\n{Ansi.NO_ITALIC}")
         IOUtils.write("~" * (max_len + 6) + "\n")
 
         for symptom in self.symptoms:
@@ -154,23 +289,24 @@ class SymptomViewer:
 
         IOUtils.write("~" * (max_len + 6) + "\n")
 
-        IOUtils.input("Press [ENTER] to continue: ")
+        IOUtils.input(f"Press {Ansi.key('ENTER')} to continue: ")
 
 class Help:
 
     STRINGS = [
-        "This program is designed to help you diagnose your symptoms.",
-        "Note: DO NOT use this for actual medical advice :)",
+        f"{Ansi.BOLD}{Ansi.UNDERLINE}Help:{Ansi.NO_UNDERLINE}{Ansi.NO_BOLD}",
+        f"This program is designed to help you {Ansi.UNDERLINE}diagnose your symptoms.{Ansi.NO_UNDERLINE}",
+        f"Note: {Ansi.BOLD}DO NOT{Ansi.NO_BOLD} use this for actual medical advice :)",
         "You select symptoms by selecting a category that your symptom falls under.",
-        "Use the keys [a] and [d] to navigate through categories.",
-        "Press [ENTER] to select a category.",
+        f"Use the keys {Ansi.key('a')} and {Ansi.key('d')} to navigate through categories.",
+        f"Press {Ansi.key('ENTER')} to select a category.",
         "From there, you will be presented with a list of symptoms to select.",
-        "Again, use [a] and [d] to navigate through the list, and press [ENTER] to select or deselect a symptom.",
-        "Use [x] to exit.",
-        "Use [v] to view your selected symptoms.",
-        "Use [h] to view this help menu.",
+        f"Again, use {Ansi.key('a')} and {Ansi.key('d')} to navigate through the list, and press [ENTER] to select or deselect a symptom.",
+        f"Use {Ansi.key('x')} to exit.",
+        f"Use {Ansi.key('v')} to view your selected symptoms.",
+        f"Use {Ansi.key('h')} to view this help menu.",
         "When you have exited the selection process, your diagnosis will be presented!",
-        "Good luck!"
+        f"{Ansi.REVERSE}Good luck!{Ansi.NO_REVERSE}"
     ]
 
     @staticmethod
@@ -178,10 +314,12 @@ class Help:
 
         IOUtils.clear()
 
+        Ansi.set_color(131) # brick
+
         for string in Help.STRINGS:
             IOUtils.write(f"- {string}\n")
 
-        IOUtils.input("Press [ENTER] to continue: ")
+        IOUtils.input(f"Press {Ansi.key('ENTER')} to continue: ")
 
 class Main:
 
@@ -198,17 +336,29 @@ class Main:
         max_len = max(map(len, categories)) + 2
         categories[self.index] = f"> {categories[self.index]}"
 
-        IOUtils.write("Symptom Categories:\n")
-        IOUtils.write("~" * (max_len + 4) + "\n")
+        Ansi.set_color(127) # dark magenta
 
-        for category in categories:
-            IOUtils.write(f"| {category:<{max_len}} |\n")
+        IOUtils.write(f"{Ansi.ITALIC}Symptom Categories:{Ansi.NO_ITALIC}\n")
 
         IOUtils.write("~" * (max_len + 4) + "\n")
+
+        for i, category in enumerate(categories):
+
+            x = Ansi.REVERSE if i == self.index else ""
+
+            IOUtils.write(f"| {x}{category:<{max_len}}{Ansi.NO_REVERSE} |\n")
+
+        IOUtils.write("~" * (max_len + 4) + "\n")
+
+        IOUtils.write(Ansi.BOLD)
 
         IOUtils.write(f"<{len(self.symptoms)} symptom{'' if len(self.symptoms) == 1 else 's'} selected>\n")
 
-        IOUtils.write("Press [a]/[d] to navigate, [ENTER] to select, [h] for help.\n")
+        IOUtils.write(Ansi.NO_BOLD)
+
+        IOUtils.write(
+        f"{Ansi.UNDERLINE}Press {Ansi.key('a')}/{Ansi.key('d')} to navigate, {Ansi.key('ENTER')} to select, {Ansi.key('h')} for help.\n{Ansi.NO_UNDERLINE}"
+        )
 
     def main(self):
 
@@ -218,7 +368,7 @@ class Main:
 
             self.write_gui()
 
-            x = IOUtils.input("-> ", sanitize=True)
+            x = IOUtils.input(f"-> ", sanitize=True)
 
             match x:
 
