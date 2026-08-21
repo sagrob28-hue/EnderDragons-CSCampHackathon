@@ -4,6 +4,7 @@ from keyboard import enable_ansi, cbreak_mode, read_key
 from ansi import Ansi, IOUtils
 from time import sleep
 from loading_screen import LoadingScreen
+from textwrap import fill
 
 # TO DO:
 
@@ -68,7 +69,7 @@ class SymptomModifier:
             IOUtils.write(f"| {x}{symptom.title():<{max_len}}{Ansi.NO_REVERSE} |\n")
 
         IOUtils.write("~" * (max_len + 8) + "\n")
-        IOUtils.write(f"{Ansi.UNDERLINE}Press {Ansi.key('a')}/{Ansi.key('d')} to navigate, {Ansi.key('ENTER')} to select, {Ansi.key('x')} to exit.\n{Ansi.NO_UNDERLINE}")
+        IOUtils.write(f"{Ansi.UNDERLINE}Press {Ansi.key('w')}/{Ansi.key('s')} to navigate, {Ansi.key('ENTER')} to select, {Ansi.key('x')} to exit.\n{Ansi.NO_UNDERLINE}")
 
     def modify(self):
 
@@ -84,9 +85,9 @@ class SymptomModifier:
                     return self.symptoms
                 case "ENTER":
                     self.toggle()
-                case "a":
+                case "a" | "w":
                     self.index -= 1
-                case "d":
+                case "d" | "s":
                     self.index += 1
 
             self.index %= len(Symptom.POSSIBLE_SYMPTOMS[self.category])
@@ -128,10 +129,10 @@ class Help:
         f"This program is designed to help you {Ansi.UNDERLINE}diagnose your symptoms.{Ansi.NO_UNDERLINE}",
         f"Note: {Ansi.BOLD}DO NOT{Ansi.NO_BOLD} use this for actual medical advice :)",
         "You select symptoms by selecting a category that your symptom falls under.",
-        f"Use the keys {Ansi.key('a')} and {Ansi.key('d')} to navigate through categories.",
+        f"Use the keys {Ansi.key('w')} and {Ansi.key('s')} to navigate through categories.",
         f"Press {Ansi.key('ENTER')} to select a category.",
         "From there, you will be presented with a list of symptoms to select.",
-        f"Again, use {Ansi.key('a')} and {Ansi.key('d')} to navigate through the list, and press [ENTER] to select or deselect a symptom.",
+        f"Again, use {Ansi.key('w')} and {Ansi.key('s')} to navigate through the list, and press [ENTER] to select or deselect a symptom.",
         f"Use {Ansi.key('x')} to exit.",
         f"Use {Ansi.key('v')} to view your selected symptoms.",
         f"Use {Ansi.key('h')} to view this help menu.",
@@ -212,14 +213,19 @@ class Main:
         condition, confidence = Diagnoser.diagnosis(*self.symptoms)
 
         IOUtils.write(Ansi.RED)
-        IOUtils.write(f"{Ansi.BOLD}{Ansi.UNDERLINE}Diagnosis:{Ansi.NO_UNDERLINE}{Ansi.NO_BOLD}\n")
-        IOUtils.write(f"You have: {Ansi.REVERSE}{condition.name.upper()}!{Ansi.NO_REVERSE} Confidence: {confidence:.2%}\n")
-        IOUtils.write(f"{Ansi.UNDERLINE}What is {condition.name.capitalize()}?\n{Ansi.NO_UNDERLINE}")
-        IOUtils.write(condition.description + "\n")
-        IOUtils.write(f"{Ansi.UNDERLINE}When should I see a doctor?{Ansi.NO_UNDERLINE}\n")
-        IOUtils.write(condition.when_to_seek_care + "\n")
-        IOUtils.write(f"More information: {Ansi.BLUE}{Ansi.UNDERLINE}{condition.link}{Ansi.NO_UNDERLINE}{Ansi.RED}\n")
-        IOUtils.write(f"Press {Ansi.key('ENTER')} to continue.")
+
+        strs = [f"{Ansi.BOLD}{Ansi.UNDERLINE}Diagnosis:{Ansi.NO_UNDERLINE}{Ansi.NO_BOLD}",
+                f"You have: {Ansi.REVERSE}{condition.name.upper()}!{Ansi.NO_REVERSE} Confidence: {confidence:.2%}",
+                f"{Ansi.UNDERLINE}What is {condition.name.capitalize()}?{Ansi.NO_UNDERLINE}",
+                condition.description,
+                f"{Ansi.UNDERLINE}When should I see a doctor?{Ansi.NO_UNDERLINE}",
+                condition.when_to_seek_care,
+                f"More information: {Ansi.BLUE}{Ansi.UNDERLINE}{condition.link}{Ansi.NO_UNDERLINE}{Ansi.RED}",
+                f"Press {Ansi.key('ENTER')} to continue."
+                ]
+
+        for string in strs:
+            IOUtils.write(f"{fill(string, 60)}\n")
 
         read_key()
 
@@ -240,9 +246,9 @@ class Main:
                     break
                 case "q":
                     self.present_diagnosis()
-                case "a":
+                case "a" | "w":
                     self.index -= 1
-                case "d":
+                case "d" | "s":
                     self.index += 1
                 case "v":
                     SymptomViewer(self.symptoms).view()
