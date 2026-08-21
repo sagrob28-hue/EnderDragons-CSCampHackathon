@@ -189,7 +189,7 @@ class Main:
         IOUtils.write(Ansi.NO_BOLD)
 
         IOUtils.write(
-        f"{Ansi.UNDERLINE}Press {Ansi.key('a')}/{Ansi.key('d')} to navigate, {Ansi.key('ENTER')} to select, {Ansi.key('h')} for help.\n{Ansi.NO_UNDERLINE}"
+        f"{Ansi.UNDERLINE}Press {Ansi.key('w')}/{Ansi.key('s')} to navigate, {Ansi.key('ENTER')} to select, {Ansi.key('h')} for help.\n{Ansi.NO_UNDERLINE}"
         )
         IOUtils.write(
             f"{Ansi.UNDERLINE}Press {Ansi.key('v')} to view selected symptoms, {Ansi.key('q')} for diagnosis, {Ansi.key('x')} to exit.\n{Ansi.NO_UNDERLINE}"
