@@ -3,9 +3,9 @@ from sys import stdout
 from platform import system
 from subprocess import run
 from enum import StrEnum
+from keyboard import enable_ansi, cbreak_mode, read_key
 
 # TO DO:
-# Make real time input
 # Add ASCII Art
 # Add loading screen
 # Add KeyboardInterrupt banner
@@ -134,8 +134,7 @@ class Ansi(StrEnum):
 
 class IOUtils:
 
-    """A class that has to do with input and output
-    (mostly input)."""
+    """A class that has to do with input and output."""
 
     __slots__ = ()
 
@@ -156,22 +155,6 @@ class IOUtils:
 
         command = "cls" if system() == "Windows" else "clear"
         run(command, shell=True)
-
-    @staticmethod
-    def input(prompt: str="", /, *, sanitize: bool=False):
-
-        """An issue with some terminals is that
-        sometimes, after an input call, the text jitters.
-        This can be (mostly) fixed using this function,
-        which first writes the prompt to the terminal separately
-        and then gets the input. An optional parameter,
-        sanitize, can also be used to automatically sanitize
-        the input."""
-
-        stdout.write(prompt)
-
-        x = input()
-        return IOUtils.sanitized(x) if sanitize else x
 
     @staticmethod
     def write(prompt: str=""):
@@ -248,12 +231,12 @@ class SymptomModifier:
             IOUtils.clear()
             self.write_gui()
 
-            choice = IOUtils.input("-> ", sanitize=True)
+            choice = read_key()
 
             match choice:
                 case "x":
                     return self.symptoms
-                case "":
+                case "ENTER":
                     self.toggle()
                 case "a":
                     self.index -= 1
@@ -289,7 +272,8 @@ class SymptomViewer:
 
         IOUtils.write("~" * (max_len + 6) + "\n")
 
-        IOUtils.input(f"Press {Ansi.key('ENTER')} to continue: ")
+        IOUtils.write(f"Press {Ansi.key('ENTER')} to continue.")
+        read_key()
 
 class Help:
 
@@ -319,7 +303,8 @@ class Help:
         for string in Help.STRINGS:
             IOUtils.write(f"- {string}\n")
 
-        IOUtils.input(f"Press {Ansi.key('ENTER')} to continue: ")
+        IOUtils.write(f"Press {Ansi.key('ENTER')} to continue.")
+        read_key()
 
 class Main:
 
@@ -368,9 +353,12 @@ class Main:
 
             self.write_gui()
 
-            x = IOUtils.input(f"-> ", sanitize=True)
+            IOUtils.write(f"Press a key.")
 
-            match x:
+            stdout.flush()
+            key = read_key()
+
+            match key:
 
                 case "x":
                     break
@@ -382,7 +370,7 @@ class Main:
                     SymptomViewer(self.symptoms).view()
                 case "h":
                     Help.write_help()
-                case "":
+                case "ENTER":
                     category = list(Symptom.POSSIBLE_SYMPTOMS)[self.index]
                     self.symptoms = SymptomModifier(category, self.symptoms).modify().copy()
 
@@ -390,8 +378,16 @@ class Main:
 
         if self.symptoms:
             condition = Diagnoser.diagnosis(*self.symptoms)
-            IOUtils.write(f"[Diagnosis] You have: {condition.upper()}!")
+            IOUtils.write(f"\n[Diagnosis] You have: {condition.upper()}!")
 
 if __name__ == "__main__":
 
-    Main().main()
+    enable_ansi()
+    IOUtils.write("\033[?25l")
+    stdout.flush()
+    try:
+        with cbreak_mode():
+            Main().main()
+    finally:
+        stdout.write("\033[?25h\033[0m\033]112\033\\")
+        stdout.flush()
