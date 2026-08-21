@@ -220,12 +220,13 @@ class Main:
                 condition.description,
                 f"{Ansi.UNDERLINE}When should I see a doctor?{Ansi.NO_UNDERLINE}",
                 condition.when_to_seek_care,
-                f"More information: {Ansi.BLUE}{Ansi.UNDERLINE}{condition.link}{Ansi.NO_UNDERLINE}{Ansi.RED}",
-                f"Press {Ansi.key('ENTER')} to continue."
                 ]
 
         for string in strs:
             IOUtils.write(f"{fill(string, 60)}\n")
+
+        IOUtils.write(f"More information: {Ansi.BLUE}{Ansi.UNDERLINE}{condition.link}{Ansi.NO_UNDERLINE}{Ansi.RED}\n")
+        IOUtils.write(f"Press {Ansi.key('ENTER')} to continue.")
 
         read_key()
 
