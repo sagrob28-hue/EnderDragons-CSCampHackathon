@@ -2,15 +2,15 @@ from diagnosis import Diagnoser, Symptom
 from sys import stdout
 from keyboard import enable_ansi, cbreak_mode, read_key
 from ansi import Ansi, IOUtils
+from time import sleep
 from loading_screen import LoadingScreen
 
 # TO DO:
-# Add loading screen
-# Add KeyboardInterrupt banner
 
 # Make diagnosis screen more interesting
 # Add information of diagnosis / cures / description with diagnosis
 # Add links to NHS.uk with each disease.
+# Also write percentage accuracy (Jaccard index)
 
 # Add README.md, fix .gitignore issues
 
@@ -142,7 +142,7 @@ class Help:
         f"Use {Ansi.key('x')} to exit.",
         f"Use {Ansi.key('v')} to view your selected symptoms.",
         f"Use {Ansi.key('h')} to view this help menu.",
-        "When you have exited the selection process, your diagnosis will be presented!",
+        f"Use {Ansi.key('q')} to see your diagnosis!",
         f"{Ansi.REVERSE}Good luck!{Ansi.NO_REVERSE}"
     ]
 
@@ -197,6 +197,38 @@ class Main:
         IOUtils.write(
         f"{Ansi.UNDERLINE}Press {Ansi.key('a')}/{Ansi.key('d')} to navigate, {Ansi.key('ENTER')} to select, {Ansi.key('h')} for help.\n{Ansi.NO_UNDERLINE}"
         )
+        IOUtils.write(
+            f"{Ansi.UNDERLINE}Press {Ansi.key('v')} to view selected symptoms, {Ansi.key('q')} for diagnosis, {Ansi.key('x')} to exit.\n{Ansi.NO_UNDERLINE}"
+        )
+
+    def present_diagnosis(self):
+
+        IOUtils.clear()
+
+        IOUtils.write(f"Calculating diagnosis")
+        for i in range(10):
+            IOUtils.write(".")
+            sleep(0.1)
+
+        IOUtils.clear()
+
+        if not self.symptoms:
+            IOUtils.write("You are healthy! :)")
+            return
+
+        condition, confidence = Diagnoser.diagnosis(*self.symptoms)
+
+        IOUtils.write(Ansi.RED)
+        IOUtils.write(f"{Ansi.BOLD}{Ansi.UNDERLINE}Diagnosis:{Ansi.NO_UNDERLINE}{Ansi.NO_BOLD}\n")
+        IOUtils.write(f"You have: {Ansi.REVERSE}{condition.name.upper()}!{Ansi.NO_REVERSE} Confidence: {confidence:.2%}\n")
+        IOUtils.write(f"{Ansi.UNDERLINE}What is {condition.name.capitalize()}?\n{Ansi.NO_UNDERLINE}")
+        IOUtils.write(condition.description + "\n")
+        IOUtils.write(f"{Ansi.UNDERLINE}When should I see a doctor?{Ansi.NO_UNDERLINE}\n")
+        IOUtils.write(condition.when_to_seek_care + "\n")
+        IOUtils.write(f"More information: {Ansi.BLUE}{Ansi.UNDERLINE}{condition.link}{Ansi.NO_UNDERLINE}{Ansi.RED}\n")
+        IOUtils.write(f"Press {Ansi.key('ENTER')} to continue.")
+
+        read_key()
 
     def main(self):
 
@@ -206,8 +238,6 @@ class Main:
 
             self.write_gui()
 
-            IOUtils.write(f"Press a key.")
-
             stdout.flush()
             key = read_key()
 
@@ -215,6 +245,8 @@ class Main:
 
                 case "x":
                     break
+                case "q":
+                    self.present_diagnosis()
                 case "a":
                     self.index -= 1
                 case "d":
@@ -228,10 +260,6 @@ class Main:
                     self.symptoms = SymptomModifier(category, self.symptoms).modify().copy()
 
             self.index %= len(Symptom.POSSIBLE_SYMPTOMS)
-
-        if self.symptoms:
-            condition = Diagnoser.diagnosis(*self.symptoms)
-            IOUtils.write(f"\n[Diagnosis] You have: {condition.upper()}!")
 
 if __name__ == "__main__":
 

@@ -58,7 +58,7 @@ f"""
             stdout.flush()
             sleep(0.05)
 
-        sleep(2)
+        sleep(4)
 
         IOUtils.clear()
 
