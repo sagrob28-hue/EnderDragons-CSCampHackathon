@@ -329,8 +329,8 @@ class Diagnoser:
             'https://www.nhs.uk/conditions/covid-19/'),
 
         SymptomSet('fever', 'bruising easily', 'weight loss', 'fatigue', 'swollen lymph nodes'): Condition(
-            'Leukaemia',
-            'A cancer of the blood-forming cells in bone marrow, causing fatigue, easy bruising and repeated infections.',
+            'Acute myeloid leukaemia',
+            'A fast-developing cancer of the blood-forming cells in bone marrow, causing fatigue, easy bruising and repeated infections.',
             'See a GP promptly about unexplained bruising, persistent fatigue or repeated infections.',
             'https://www.nhs.uk/conditions/acute-myeloid-leukaemia/'),
 

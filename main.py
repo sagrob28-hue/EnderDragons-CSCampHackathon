@@ -7,14 +7,7 @@ from loading_screen import LoadingScreen
 
 # TO DO:
 
-# Make diagnosis screen more interesting
-# Add information of diagnosis / cures / description with diagnosis
-# Add links to NHS.uk with each disease.
-# Also write percentage accuracy (Jaccard index)
-
 # Add README.md, fix .gitignore issues
-
-# Experiment with other set-matching algorithms
 
 class SymptomModifier:
 
